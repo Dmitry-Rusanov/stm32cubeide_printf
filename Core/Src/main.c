@@ -43,6 +43,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 UART_HandleTypeDef huart1;
+DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
 
@@ -51,6 +52,7 @@ UART_HandleTypeDef huart1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -89,6 +91,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
@@ -198,6 +201,22 @@ static void MX_USART1_UART_Init(void)
 
 }
 
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
+
+}
+
 /**
   * @brief GPIO Initialization Function
   * @param None
@@ -219,9 +238,22 @@ static void MX_GPIO_Init(void)
   #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
 
+#define STR_SIZE 8
+
+uint8_t str[STR_SIZE]={0};
 PUTCHAR_PROTOTYPE
 {
-	HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
+	static uint16_t index = 0 ;
+
+
+	str[index++] = ch;
+	if(ch=='\n'||index >= STR_SIZE)
+	{
+		HAL_UART_Transmit_DMA(&huart1,str,index);
+		HAL_DMA_PollForTransfer(&hdma_usart1_tx, HAL_DMA_FULL_TRANSFER, 100);
+		index = 0;
+	}
+	//HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
 	return ch;
 }
 /* USER CODE END 4 */
