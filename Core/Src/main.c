@@ -238,22 +238,21 @@ static void MX_GPIO_Init(void)
   #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
 
-#define STR_SIZE 8
+#define STR_SIZE 255
 
 uint8_t str[STR_SIZE]={0};
+
 PUTCHAR_PROTOTYPE
 {
 	static uint16_t index = 0 ;
 
 
 	str[index++] = ch;
-	if(ch=='\n'||index >= STR_SIZE)
+	if(ch=='\n')
 	{
 		HAL_UART_Transmit_DMA(&huart1,str,index);
-		HAL_DMA_PollForTransfer(&hdma_usart1_tx, HAL_DMA_FULL_TRANSFER, 100);
 		index = 0;
 	}
-	//HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
 	return ch;
 }
 /* USER CODE END 4 */
